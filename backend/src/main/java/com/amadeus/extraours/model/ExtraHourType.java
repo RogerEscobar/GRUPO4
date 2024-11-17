@@ -1,0 +1,11 @@
+package com.amadeus.extraours.model;
+
+public enum ExtraHourType {
+    EXTRA_DIURNA,
+    EXTRA_NOCTURNA,
+    DOMINICAL_DIURNA,
+    EXTRA_DOMINICAL_DIURNA,
+    DOMINICAL_NOCTURNA,
+    EXTRA_DOMINICAL_NOCTURNA,
+    RECARGO_NOCTURNO
+}
