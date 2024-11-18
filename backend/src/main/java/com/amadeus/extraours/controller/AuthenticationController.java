@@ -24,10 +24,11 @@ public class AuthenticationController {
     }
 
     @PostMapping("/send-code")
-    public ResponseEntity<Map<String, String>> sendVerificationCode(@RequestParam String email){
-        authenticationService.sendVerificationCode(email);
+    public ResponseEntity<Map<String, String>> sendVerificationCode(@RequestBody Map<String, String> request){
+        String userId = request.get("userId");
+        authenticationService.sendVerificationCode(userId);
         Map<String, String> response = new HashMap<>();
-        response.put("message", "Código de verificación envíado");
+        response.put("message", "Se ha enviado un código de verificación al correo asociado");
         return ResponseEntity.ok(response);
     }
 

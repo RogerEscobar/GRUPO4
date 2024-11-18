@@ -3,7 +3,7 @@ package com.amadeus.extraours.dto.request;
 import jakarta.validation.constraints.NotBlank;
 
 public class AuthenticationRequest {
-    @NotBlank(message = "El ID es requerido")
+    @NotBlank(message = "La cédula es requerida")
     private String userId;
 
     @NotBlank(message = "El código de verificación es requerido")

@@ -47,14 +47,16 @@ public class AuthenticationService {
 
 //    Enviar un código de verificación al email registrado
     @Transactional
-    public void sendVerificationCode(String email){
-        logger.info("Iniciando proceso de envío de código de verificación para: " + email);
+    public void sendVerificationCode(String userId){
+        logger.info("Iniciando proceso de envío de código de verificación para cédula: " + userId);
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con email: " + email));
+        //Obtener el usuario por cédula
+        User user = userRepository.findById(Long.parseLong(userId))
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con cédula: " + userId));
+
 
         if (user.isLocked()) {
-            logger.warning("Intento de acceso a cuenta bloqueada: " + email);
+            logger.warning("Intento de acceso a cuenta bloqueada: " + userId);
             throw new UserLockedException("La cuenta está bloqueada. Contacte al administrador.");
         }
 
@@ -66,17 +68,17 @@ public class AuthenticationService {
         userRepository.save(user);
 
         emailService.sendVerificationCode(user.getEmail(), verificationCode);
-        logger.info("Código de verificación enviado exitosamente a: " + email);
+        logger.info("Código de verificación enviado exitosamente al email asociado a: " + userId);
     }
 
 //    Vaidar código suministrado
 
     @Transactional
-    public AuthenticationResponse verifyCode(String email, String code) {
-        logger.info("Verificando código para usuario: " + email);
+    public AuthenticationResponse verifyCode(String userId, String code) {
+        logger.info("Verificando código para usuario: " + userId);
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con email: " + email));
+        User user = userRepository.findById(Long.parseLong(userId))
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con cédula: " + userId));
 
         boolean isValid = code.equals(user.getVerificationCode()) &&
                 LocalDateTime.now().isBefore(user.getVerificationCodeExpiry());
@@ -87,11 +89,11 @@ public class AuthenticationService {
         }
 
         handleValidCode(user);
-        logger.info("Código verificado exitosamente para: " + email);
+        logger.info("Código verificado exitosamente para: " + userId);
 
         //Convertir User a UserDetails para generar Token
         UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
+                user.getId().toString(),
                 "",
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
@@ -118,7 +120,7 @@ public class AuthenticationService {
         userRepository.save(user);
 
         if (user.isLocked()){
-            logger.warning("Cuenta bloqueada después de múltiples intentos: " + user.getEmail());
+            logger.warning("Cuenta bloqueada después de múltiples intentos: " + user.getId());
         }
 
         throw new InvalidVerificationCodeException("Código de verificación invalido o expirado");
