@@ -11,6 +11,7 @@ import LoginForm from "../../components/auth/LoginForm";
 import Card from "../../components/common/Card";
 import Alert from "../../components/common/Alert";
 import { LogoDark } from "../../components/common/LogoDark";
+import Modal from "../../components/common/Modal";
 
 function LoginPage() {
   // Estados para el manejo del formulario
@@ -18,6 +19,7 @@ function LoginPage() {
   const [verificationCode, setVerificationCode] = useState("");
   const [step, setStep] = useState("id"); // 'id' para cédula, 'code' para código de verificación
   const [error, setError] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Hooks para navegación y manejo de autenticación
   const navigate = useNavigate();
@@ -27,14 +29,13 @@ function LoginPage() {
   const handleIdSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log("Intentando enviar código a:", userId); // Nuevo console.log
       await authService.sendVerificationCode(userId);
-      console.log("Código enviado exitosamente"); // Nuevo console.log
+      setShowSuccessModal(true);
       setStep("code");
       setError(null);
     } catch (error) {
-      console.error("Error completo:", error); // Nuevo console.log
       setError(error.response?.data?.message || "Usuario no encontrado");
+      console.error("Error al enviar código:", error);
     }
   };
 
@@ -43,7 +44,11 @@ function LoginPage() {
     e.preventDefault();
     try {
       const response = await authService.verifyCode(userId, verificationCode);
-      setAuth(response.token, response.user);
+      setAuth(response.token, {
+        id: userId,
+        name: response.userName,
+        role: response.userRole,
+      });
       navigate("/dashboard");
     } catch (error) {
       setError(error.response?.data?.message || "Código inválido");
@@ -52,47 +57,58 @@ function LoginPage() {
   };
 
   return (
-    // Contenedor principal con fondo degradado
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-amadeus-primary to-amadeus-secondary">
-      {/* Card principal de login */}
       <Card className="w-96">
-        {/* Logo de Amadeus */}
+        {/* Logo */}
         <div className="flex justify-center items-center w-32 h-16 mx-auto mb-8">
           <LogoDark className="w-full h-full" />
         </div>
 
-        {/* Título dinámico según el paso actual */}
+        {/* Título */}
         <h2 className="text-2xl font-bold text-center mb-6">
           {step === "id" ? "Bienvenido a ExtraHours" : "Ingresa el código"}
         </h2>
 
-        {/* Alerta de error si existe */}
+        {/* Mensajes de error */}
         {error && (
           <Alert type="error" message={error} onClose={() => setError(null)} />
         )}
 
-        {/* Formulario condicional según el paso actual */}
+        {/* Formularios */}
         {step === "id" ? (
-          // Formulario para ingresar cédula
           <LoginForm
             onSubmit={handleIdSubmit}
             buttonText="Continuar"
             inputValue={userId}
             onInputChange={(e) => setUserId(e.target.value)}
-            placeholder="Número de cédula"
+            placeholder="Ingresa solo números"
+            label="Número de cédula"
+            isCodeInput={false}
           />
         ) : (
-          // Formulario para ingresar código de verificación
           <LoginForm
             onSubmit={handleCodeSubmit}
             buttonText="Verificar"
             inputValue={verificationCode}
             onInputChange={(e) => setVerificationCode(e.target.value)}
-            placeholder="Código de verificación"
+            placeholder="Ingresa el código de 6 dígitos"
             maxLength="6"
+            label="Código de verificación"
+            isCodeInput={true}
           />
         )}
       </Card>
+
+      {/* Modal de confirmación */}
+      <Modal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Código Enviado">
+        <p className="text-sm text-gray-500">
+          Se ha enviado un código de verificación al correo electrónico
+          registrado. Por favor, revisa tu bandeja de entrada.
+        </p>
+      </Modal>
     </div>
   );
 }

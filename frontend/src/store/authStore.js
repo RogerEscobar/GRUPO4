@@ -11,12 +11,15 @@ const useAuthStore = create(
       isAuthenticated: false,
 
       // Acción para establecer autenticación
-      setAuth: (token, userData) =>
+      setAuth: (token, userData) => {
+        console.log("Setting auth with token:", token);
+        console.log("Setting auth with user data:", userData);
         set({
           token,
           user: userData,
           isAuthenticated: true,
-        }),
+        });
+      },
 
       // Acción para cerrar sesión
       logout: () =>

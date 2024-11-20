@@ -4,6 +4,7 @@ package com.amadeus.extraours.service;
 import com.amadeus.extraours.exception.ExtraHourNotFoundException;
 import com.amadeus.extraours.model.ExtraHour;
 import com.amadeus.extraours.model.ExtraHourStatus;
+import com.amadeus.extraours.model.ExtraHourType;
 import com.amadeus.extraours.repository.ExtraHourRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,19 +20,27 @@ import java.util.logging.Logger;
 
 @Service
 public class ExtraHourService {
-
+    //Traking de operaciones
     private static final Logger logger = Logger.getLogger(ExtraHourService.class.getName());
+
+    //Dependencias
     private final ExtraHourRepository extraHourRepository;
+    private final ExtraHourTypeCalculator typeCalculator;
 
     @Autowired
-    public ExtraHourService(ExtraHourRepository extraHourRepository) {
+    public ExtraHourService(
+            ExtraHourRepository extraHourRepository,
+            ExtraHourTypeCalculator typeCalculator) {
         this.extraHourRepository = extraHourRepository;
+        this.typeCalculator = typeCalculator;
     }
 
     //Registro de horas extras
     public ExtraHour registerExtraHour(ExtraHour extraHour) {
+        logger.info("Iniciando registro de hora extra para empleado: " + extraHour.getEmployeeId());
         validateExtraHour(extraHour);
 
+        //Validar solapamiento
         if (extraHourRepository.existsOverlappingHours(
                 extraHour.getEmployeeId(),
                 extraHour.getStartDateTime(),
@@ -39,9 +48,14 @@ public class ExtraHourService {
             throw new IllegalStateException("Ya existe un registro de horas extra para este periodo");
         }
 
+        //Calcular el tipo de hora
+        ExtraHourType calculatedType = typeCalculator.calculateType(extraHour.getStartDateTime());
+        extraHour.setType(calculatedType);
         extraHour.setStatus(ExtraHourStatus.PENDIENTE);
+
         ExtraHour savedExtraHour = extraHourRepository.save(extraHour);
-        logger.info("Hora extra registrada para empleado: " + extraHour.getEmployeeId());
+        logger.info("Hora extra registrada para empleado: " +extraHour.getEmployeeId()+
+                " con tipo: " + calculatedType);
         return savedExtraHour;
     }
 

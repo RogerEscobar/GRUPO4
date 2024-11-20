@@ -1,147 +1,139 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import Input from "../common/Input";
-import Button from "../common/Button";
+import Card from "../common/Card";
 import Alert from "../common/Alert";
+import Button from "../common/Button";
+import TimeRangeSelector from "./TimeRangeSelector";
+import { formatExtraHourType } from "../../utils/formatUtils";
 
 const ExtraHourForm = ({ onSubmit, loading, employeeName }) => {
-  // Estados del formulario
-  const [formData, setFormData] = useState({
-    startDateTime: "",
-    endDateTime: "",
-    observations: "",
-  });
+  // Estados para el formulario
+  const [timeRange, setTimeRange] = useState(null);
+  const [observations, setObservations] = useState("");
   const [error, setError] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Manejador de cambios en inputs
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Limpiar error cuando el usuario modifica algún campo
+  // Manejador de cambios en el rango de tiempo
+  const handleTimeChange = (range) => {
+    setTimeRange(range);
     setError(null);
   };
 
-  // Validaciones del formulario
-  const validateForm = () => {
-    // Validar que ambas fechas estén presentes
-    if (!formData.startDateTime || !formData.endDateTime) {
-      setError("Debes seleccionar fecha y hora de inicio y fin");
-      return false;
-    }
-
-    const start = new Date(formData.startDateTime);
-    const end = new Date(formData.endDateTime);
-    const now = new Date();
-
-    // Validar que las fechas no sean futuras
-    if (start > now || end > now) {
-      setError("No se pueden registrar horas extra futuras");
-      return false;
-    }
-
-    // Validar que la fecha fin sea posterior a la de inicio
-    if (end <= start) {
-      setError("La fecha de fin debe ser posterior a la fecha de inicio");
-      return false;
-    }
-
-    // Calcular diferencia en horas
-    const diffHours = (end - start) / (1000 * 60 * 60);
-
-    // Validar máximo de horas
-    if (diffHours > 2) {
-      setError("No se pueden registrar más de 2 horas extra por día");
-      return false;
-    }
-
-    // Validar mínimo de tiempo
-    if (diffHours < 0.5) {
-      setError("El registro debe ser de mínimo 30 minutos");
-      return false;
-    }
-
-    return true;
+  // Manejador de cambios en observaciones
+  const handleObservationsChange = (e) => {
+    setObservations(e.target.value);
   };
 
-  // Manejador de envío del formulario
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
+  // Validación antes de mostrar confirmación
+  const handleContinue = () => {
+    if (!timeRange) {
+      setError("Por favor selecciona el rango de tiempo");
       return;
     }
-
-    onSubmit(formData);
+    setShowConfirmation(true);
   };
 
+  // Manejador de envío final
+  const handleSubmit = () => {
+    if (!timeRange) return;
+
+    onSubmit({
+      ...timeRange,
+      observations,
+    });
+  };
+
+  // Si estamos en modo confirmación
+  if (showConfirmation) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <div className="p-6 space-y-6">
+          <h2 className="text-xl font-bold text-center">Confirmar Registro</h2>
+          <div className="space-y-4">
+            <p className="text-lg">
+              {employeeName}, vas a registrar las siguientes horas extra:
+            </p>
+            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+              <p>
+                <span className="font-medium">Inicio:</span>{" "}
+                {timeRange.start.date} {timeRange.start.time}{" "}
+                {timeRange.start.period}
+              </p>
+              <p>
+                <span className="font-medium">Fin:</span> {timeRange.end.date}{" "}
+                {timeRange.end.time} {timeRange.end.period}
+              </p>
+
+              {timeRange.type && (
+                <p>
+                  <span className="font-medium">Tipo:</span>{" "}
+                  {formatExtraHourType(timeRange.type)}
+                </p>
+              )}
+              {observations && (
+                <p>
+                  <span className="font-medium">Observaciones:</span>{" "}
+                  {observations}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-4 justify-end">
+            <Button
+              variant="secondary"
+              onClick={() => setShowConfirmation(false)}>
+              Regresar
+            </Button>
+            <Button onClick={handleSubmit} loading={loading}>
+              Confirmar Registro
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Formulario principal
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Mostrar nombre del empleado si está disponible */}
-      {employeeName && (
-        <div className="text-gray-600">Empleado: {employeeName}</div>
-      )}
-
-      {/* Mensajes de error */}
-      {error && (
-        <Alert type="error" message={error} onClose={() => setError(null)} />
-      )}
-
-      <div className="space-y-4">
-        {/* Campo fecha y hora inicio */}
+    <Card className="max-w-2xl mx-auto">
+      <div className="p-6 space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Fecha y hora inicio
-          </label>
-          <Input
-            type="datetime-local"
-            name="startDateTime"
-            value={formData.startDateTime}
-            onChange={handleChange}
-            required
-            max={new Date().toISOString().slice(0, 16)}
-          />
+          <h2 className="text-xl font-semibold text-amadeus-primary">
+            Registrar Horas Extra
+          </h2>
+          <p className="text-gray-600 mt-2">
+            Registra tus horas extra trabajadas. Recuerda que el máximo
+            permitido es de 2 horas por día.
+          </p>
         </div>
 
-        {/* Campo fecha y hora fin */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Fecha y hora fin
-          </label>
-          <Input
-            type="datetime-local"
-            name="endDateTime"
-            value={formData.endDateTime}
-            onChange={handleChange}
-            required
-            max={new Date().toISOString().slice(0, 16)}
-          />
-        </div>
+        {error && (
+          <Alert type="error" message={error} onClose={() => setError(null)} />
+        )}
 
-        {/* Campo observaciones */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <TimeRangeSelector onTimeChange={handleTimeChange} />
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
             Observaciones
           </label>
           <textarea
-            name="observations"
-            value={formData.observations}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg focus:outline-none focus:border-amadeus-primary"
-            rows="3"
-            maxLength="500"
+            value={observations}
+            onChange={handleObservationsChange}
+            className="textarea textarea-bordered w-full h-24"
             placeholder="Describe brevemente el trabajo realizado..."
+            maxLength={500}
           />
         </div>
-      </div>
 
-      {/* Botón submit */}
-      <Button type="submit" fullWidth disabled={loading}>
-        {loading ? "Registrando..." : "Registrar Horas Extra"}
-      </Button>
-    </form>
+        <Button
+          onClick={handleContinue}
+          fullWidth
+          disabled={!timeRange || loading}>
+          Continuar
+        </Button>
+      </div>
+    </Card>
   );
 };
 
