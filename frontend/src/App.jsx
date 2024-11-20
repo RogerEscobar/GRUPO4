@@ -9,6 +9,7 @@ import DashboardPage from "./pages/DashboardPage";
 import RegisterPage from "./pages/extra-hours/RegisterPage";
 import DashboardLayout from "./layouts/DashboardLayout";
 import PrivateRoute from "./components/auth/PrivateRoute";
+import ExtraHoursApprovalPage from "./pages/extra-hours/ExtraHoursApprovalPage";
 
 function App() {
   return (
@@ -35,6 +36,16 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <RegisterPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/extra-hours/approval"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ExtraHoursApprovalPage />
               </DashboardLayout>
             </PrivateRoute>
           }

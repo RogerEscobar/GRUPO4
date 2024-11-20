@@ -37,6 +37,27 @@ const extraHourService = {
       throw error;
     }
   },
+   // Aprobar hora extra
+  approve: async (id) => {
+    try {
+      const response = await axios.put(`${API_URL}/${id}/approve`);
+      return response.data;
+    } catch (error) {
+      console.error("Error al aprobar la hora extra:", error.response?.data);
+      throw error;
+    }
+  },
+
+  // Rechazar hora extra
+  reject: async (id) => {
+    try {
+      const response = await axios.put(`${API_URL}/${id}/reject`);
+      return response.data;
+    } catch (error) {
+      console.error("Error al rechazar la hora extra:", error.response?.data);
+      throw error;
+    }
+  },
 };
 
 export default extraHourService;

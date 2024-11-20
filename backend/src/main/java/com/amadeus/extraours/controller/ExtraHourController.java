@@ -84,7 +84,7 @@ public class ExtraHourController {
         return ResponseEntity.ok(ExtraHourDTO.fromEntity(approvedHour));
     }
 
-    @Operation(summary = "Rechar hora extra")
+    @Operation(summary = "Rechazar hora extra")
     @PutMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('TEAM_LEADER', 'MASTER')")
     public ResponseEntity<ExtraHourDTO> rejectExtraHour(@PathVariable Long id) {
