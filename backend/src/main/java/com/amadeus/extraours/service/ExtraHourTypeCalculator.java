@@ -16,8 +16,8 @@ public class ExtraHourTypeCalculator {
     private static final Logger logger = Logger.getLogger(ExtraHourTypeCalculator.class.getName());
 
     // Horarios según normativa colombiana
-    private static final LocalTime DIURNO_START = LocalTime.of(6, 0);
-    private static final LocalTime DIURNO_END = LocalTime.of(21, 0);
+    private static final LocalTime NOCTURNO_START = LocalTime.of(22, 0);
+    private static final LocalTime NOCTURNO_END = LocalTime.of(6, 0);
 
     //Festivos para colombia
     private final HolidayManager holidayManager;
@@ -59,7 +59,7 @@ public class ExtraHourTypeCalculator {
     // Verifica si la hora esta en horario nocturno
 
     private boolean isNightTime(LocalTime time) {
-        return time.isBefore(DIURNO_START) || time.isAfter(DIURNO_END);
+        return time.isAfter(NOCTURNO_START) || time.isBefore(NOCTURNO_END);
     }
 
     //vALIDA SI DOMINGO O FESTIVO

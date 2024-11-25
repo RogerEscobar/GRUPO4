@@ -1,92 +1,98 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useAuthStore from "../store/authStore";
+import ExtraHourForm from "../components/extra-hours/ExtraHourForm";
 import Card from "../components/common/Card";
+import Alert from "../components/common/Alert";
+import useAuthStore from "../store/authStore";
+import extraHourService from "../services/extraHourService";
+
+// Maneja el registro de horas extra y acceso al historial
 
 const DashboardPage = () => {
-  // Hooks para navegación y estado global
+  // Hooks y estado global
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
 
-  // Manejadores de navegación
-  const handleRegisterClick = () => {
-    navigate("/extra-hours/register");
-  };
+  // Estados locales para manejo de UI
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
-  const handleHistoryClick = () => {
-    navigate("/extra-hours/history");
+  //Maneja el registro de horas extra
+
+  const handleSubmit = async (formData) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Registrar horas extra
+      await extraHourService.register(formData);
+
+      // Mostrar mensaje de éxito
+      setSuccessMessage("Horas extra registradas correctamente");
+
+      // Recargar después de 2 segundos
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error("Error al registrar horas extra:", error);
+      setError(error.message || "Error al registrar las horas extra");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Encabezado con bienvenida */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Bienvenido, {user?.name}
-        </h1>
-        <p className="text-gray-600">Sistema de gestión de horas extra</p>
-      </div>
-
-      {/* Tarjetas de acciones */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Tarjeta de Registro de Horas */}
-        <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-amadeus-primary mb-3">
-              Registrar Horas Extra
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Registra tus horas extra trabajadas. Recuerda que el máximo
-              permitido es de 2 horas por día.
-            </p>
-            <button
-              onClick={handleRegisterClick}
-              className="btn btn-primary w-full"
-              disabled={user?.role !== "EMPLEADO"}>
-              Registrar Horas
-            </button>
-          </div>
-        </Card>
-
-        {/* Tarjeta de Historial */}
-        <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-amadeus-primary mb-3">
-              Mis Registros
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Consulta tu historial de horas extra registradas y su estado de
-              aprobación.
-            </p>
-            <button
-              onClick={handleHistoryClick}
-              className="btn btn-outline btn-primary w-full">
-              Ver Historial
-            </button>
-          </div>
-        </Card>
-      </div>
-
-      {/* Zona de Aprobaciones (solo para TEAM_LEADER y MASTER) */}
-      {(user?.role === "TEAM_LEADER" || user?.role === "MASTER") && (
-        <div className="mt-8">
-          <Card className="bg-white shadow-lg">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-amadeus-primary mb-3">
-                Aprobaciones Pendientes
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Revisa y gestiona las solicitudes de horas extra pendientes de
-                aprobación.
-              </p>
-              <button
-                onClick={() => navigate("/extra-hours/approvals")}
-                className="btn btn-primary w-full">
-                Ver Solicitudes
-              </button>
-            </div>
-          </Card>
-        </div>
+    <div className="space-y-6">
+      {/* Mensajes de estado */}
+      {successMessage && (
+        <Alert
+          type="success"
+          message={successMessage}
+          onClose={() => setSuccessMessage(null)}
+        />
       )}
+
+      {error && (
+        <Alert type="error" message={error} onClose={() => setError(null)} />
+      )}
+
+      {/* Card de Registro de Horas Extra */}
+      <Card className="w-full">
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-amadeus-primary mb-4">
+            Registrar Horas Extra
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Registra tus horas extra trabajadas. Recuerda que el máximo
+            permitido es de 2 horas por día.
+          </p>
+          <ExtraHourForm
+            onSubmit={handleSubmit}
+            loading={loading}
+            employeeName={user?.name}
+          />
+        </div>
+      </Card>
+
+      {/* Card de Historial */}
+      <Card className="w-full">
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-amadeus-primary mb-4">
+            Mis Registros
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Consulta tu historial de horas extra registradas y su estado de
+            aprobación.
+          </p>
+          <button
+            className="w-full bg-amadeus-primary text-white py-2 px-4 rounded-md hover:bg-amadeus-secondary transition-colors"
+            onClick={() => navigate("/extra-hours/history")}>
+            Ver Historial
+          </button>
+        </div>
+      </Card>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 package com.amadeus.extraours.service;
 
 
+import com.amadeus.extraours.dto.response.ExtraHourValidationDTO;
 import com.amadeus.extraours.exception.ExtraHourNotFoundException;
 import com.amadeus.extraours.model.ExtraHour;
 import com.amadeus.extraours.model.ExtraHourStatus;
@@ -12,7 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +72,37 @@ public class ExtraHourService {
             Pageable pageable) {
 
         return extraHourRepository.findByFilters(employeedId, startDate, endDate, pageable);
+    }
+
+    //Validar las horas extra sin guardar
+
+    public ExtraHourValidationDTO previewExtraHour(ExtraHour extraHour) {
+        ExtraHourValidationDTO validation = new ExtraHourValidationDTO();
+
+        try {
+            validateExtraHour(extraHour);
+
+            Map<ExtraHourType, Double> hoursPerType = calculateHoursPerType (
+                    extraHour.getStartDateTime(),
+                    extraHour.getEndDateTime()
+            );
+
+            //Asignación de horas calculadas
+            validation.setHorasDiurnas(hoursPerType.containsKey(ExtraHourType.EXTRA_DIURNA) ?
+                    hoursPerType.get(ExtraHourType.EXTRA_DIURNA) : 0.0);
+            validation.setHorasNocturnas(hoursPerType.containsKey(ExtraHourType.EXTRA_NOCTURNA) ?
+                    hoursPerType.get(ExtraHourType.EXTRA_NOCTURNA) : 0.0);
+            validation.setHorasDominicalesDiurnas(hoursPerType.containsKey(ExtraHourType.EXTRA_DOMINICAL_DIURNA) ?
+                    hoursPerType.get(ExtraHourType.EXTRA_DOMINICAL_DIURNA) : 0.0);
+            validation.setHorasDominicalesNocturnas(hoursPerType.containsKey(ExtraHourType.EXTRA_DOMINICAL_NOCTURNA) ?
+                    hoursPerType.get(ExtraHourType.EXTRA_DOMINICAL_NOCTURNA) : 0.0);
+            validation.setValid(true);
+        } catch (IllegalArgumentException e) {
+            validation.setValid(false);
+            validation.setMessage(e.getMessage());
+        }
+
+        return validation;
     }
 
 //    Obtener una hora extra por ID
@@ -135,7 +169,7 @@ public class ExtraHourService {
     }
 
 
-    private void validateExtraHour(ExtraHour extraHour) {
+    public void validateExtraHour(ExtraHour extraHour) {
         if (extraHour.getStartDateTime().isAfter(extraHour.getEndDateTime())){
             throw new IllegalArgumentException("La fecha de inicio debe ser anterior a la fecha del fin");
         }
@@ -153,5 +187,49 @@ public class ExtraHourService {
         existing.setEndDateTime(updated.getEndDateTime());
         existing.setType(updated.getType());
         existing.setObservations(updated.getObservations());
+    }
+
+    //calculo de horas por tipo para un rango de tiempo
+    private Map<ExtraHourType, Double> calculateHoursPerType (
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime ) {
+
+        Map<ExtraHourType, Double> hoursPerType = new HashMap<>();
+        LocalDateTime currentTime = startDateTime;
+
+        while (currentTime.isBefore(endDateTime)) {
+            ExtraHourType type = typeCalculator.calculateType(currentTime);
+
+            //Calcular minutos hasta el siguiente cambio de tipo
+            LocalDateTime nextChange = getNextTypeChange(currentTime, endDateTime);
+            double hours = Duration.between(currentTime, nextChange).toMinutes() / 60.0;
+
+            //Acumular las horas por tipo
+            hoursPerType.merge(type, hours, Double::sum);
+
+            currentTime = nextChange;
+        }
+
+        return hoursPerType;
+
+    }
+
+    //Calcula el siguiente momento donde cambia el tipo de hora
+
+    private LocalDateTime getNextTypeChange(LocalDateTime current, LocalDateTime end) {
+        LocalDateTime nextChange;
+        int currentHour = current.getHour();
+        int currentMinute = current.getMinute();
+
+        if (currentHour < 6) {
+            nextChange = current.withHour(6).withMinute(0);
+        } else if (currentHour < 21 || (currentHour == 21 && currentMinute == 0)) {
+            nextChange = current.withHour(21).withMinute(0);
+        } else {
+            nextChange = current.plusDays(1).withHour(6).withMinute(0);
+        }
+
+        return nextChange.isAfter(end) ? end : nextChange;
+
     }
 }

@@ -1,23 +1,30 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import PropTypes from "prop-types";
-import { useCallback } from "react";
 
+/**
+ * Componente para proteger rutas que requieren autenticación
+ * @component
+ * @param {Object} props - Propiedades del componente
+ * @param {ReactNode} props.children - Componentes hijos a renderizar si está autenticado
+ * @returns {JSX.Element} Componente renderizado
+ */
 const PrivateRoute = ({ children }) => {
-  const isAuthenticated = useAuthStore(
-    useCallback((state) => state.isAuthenticated, [])
-  );
+  // Obtener estado de autenticación del store
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
+  // Si no está autenticado, redirigir al login
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
-  return children;
+  // Si hay children específicos, renderizarlos
+  // Si no, usar Outlet para rutas anidadas
+  return children || <Outlet />;
 };
 
-// Agregar la validación de PropTypes
 PrivateRoute.propTypes = {
-  children: PropTypes.node.isRequired,
+  children: PropTypes.node,
 };
 
 export default PrivateRoute;

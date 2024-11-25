@@ -2,6 +2,7 @@ package com.amadeus.extraours.controller;
 
 import com.amadeus.extraours.dto.request.ExtraHourRequest;
 import com.amadeus.extraours.dto.response.ExtraHourDTO;
+import com.amadeus.extraours.dto.response.ExtraHourValidationDTO;
 import com.amadeus.extraours.model.ExtraHour;
 import com.amadeus.extraours.model.ExtraHourStatus;
 import com.amadeus.extraours.service.ExtraHourService;
@@ -39,9 +40,18 @@ public class ExtraHourController {
         this.extraHourService = extraHourService;
     }
 
+    @Operation(summary = "Validar hora extra antes de registrar")
+    @PostMapping("/preview")
+    @PreAuthorize("hasRole('ROLE_EMPLEADO')")
+    public ResponseEntity<ExtraHourValidationDTO> previewExtraHour(@Valid @RequestBody ExtraHourRequest request) {
+        ExtraHourValidationDTO validation = extraHourService.previewExtraHour(request.toEntity());
+        return ResponseEntity.ok(validation);
+    }
+
+
     @Operation(summary = "Registrar nueva hora extra")
     @PostMapping
-    @PreAuthorize("hasRole('EMPLEADO')")
+    @PreAuthorize("hasRole('ROLE_EMPLEADO')")
     public ResponseEntity<ExtraHourDTO> registerExtraHour(@Valid @RequestBody ExtraHourRequest request){
         logger.info("Registrando nueva hora extra para empleado: " + request.getEmployeeId());
         ExtraHour extraHour = extraHourService.registerExtraHour(request.toEntity());
@@ -69,7 +79,7 @@ public class ExtraHourController {
 
     @Operation(summary = "Actualizar hora extra")
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole( 'EMPLEADO')")
+    @PreAuthorize("hasRole( 'ROLE_EMPLEADO')")
     public ResponseEntity<ExtraHourDTO> updateExtraHour(
             @PathVariable Long id,
             @Valid @RequestBody ExtraHourRequest request) {
@@ -79,15 +89,15 @@ public class ExtraHourController {
 
     @Operation(summary = "Aprobar hora extra")
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('TEAM_LEADER', 'MASTER')")
+    @PreAuthorize("hasAnyRole('ROLE_TEAM_LEADER', 'ROLE_MASTER')")
     public ResponseEntity<ExtraHourDTO> approveExtraHour(@PathVariable Long id) {
         ExtraHour approvedHour = extraHourService.updateStatus(id, ExtraHourStatus.APROBADO);
         return ResponseEntity.ok(ExtraHourDTO.fromEntity(approvedHour));
     }
 
-    @Operation(summary = "Rechar hora extra")
+    @Operation(summary = "Rechazar hora extra")
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAnyRole('TEAM_LEADER', 'MASTER')")
+    @PreAuthorize("hasAnyRole('ROLE_TEAM_LEADER', 'ROLE_MASTER')")
     public ResponseEntity<ExtraHourDTO> rejectExtraHour(@PathVariable Long id) {
         ExtraHour rejectedHour = extraHourService.updateStatus(id, ExtraHourStatus.RECHAZADO);
         return ResponseEntity.ok(ExtraHourDTO.fromEntity(rejectedHour));
@@ -106,7 +116,7 @@ public class ExtraHourController {
 
     @Operation(summary = "Eliminar hora extra")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('MASTER')")
+    @PreAuthorize("hasRole('ROLE_MASTER')")
     public ResponseEntity<Void> deleteExtraHour(@PathVariable Long id) {
         extraHourService.deleteExtraHour(id);
         return ResponseEntity.noContent().build();
