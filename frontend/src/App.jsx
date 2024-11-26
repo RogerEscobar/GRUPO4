@@ -7,15 +7,13 @@ import {
 import LoginPage from "./pages/auth/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import RegisterPage from "./pages/extra-hours/RegisterPage";
+import HistoryPage from "./pages/extra-hours/HistoryPage";
 import DashboardLayout from "./layouts/DashboardLayout";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import useAuthStore from "./store/authStore";
 
-/**
- * Componente principal de la aplicación
- * Maneja el enrutamiento y la protección de rutas
- */
 function App() {
+  // Obtener estado de autenticación del store
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
@@ -48,8 +46,16 @@ function App() {
         {/* Rutas protegidas - Requieren autenticación */}
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
+            {/* Página principal del dashboard */}
             <Route index element={<DashboardPage />} />
-            <Route path="extra-hours/register" element={<RegisterPage />} />
+
+            {/* Rutas de horas extra */}
+            <Route path="extra-hours">
+              {/* Ruta para registro de horas extra */}
+              <Route path="register" element={<RegisterPage />} />
+              {/* Nueva ruta para historial de horas extra */}
+              <Route path="history" element={<HistoryPage />} />
+            </Route>
           </Route>
         </Route>
 

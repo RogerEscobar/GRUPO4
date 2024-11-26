@@ -46,8 +46,8 @@ El sistema implementa un proceso de autenticación sin contraseñas basado en c�
 
 - Sistema basado en códigos de verificación enviados por email
 
-  1. El usuario ingresa su email (ID)
-  2. El sistema envía un código de 6 dígitos al correo registrado
+  1. El usuario ingresa su cédula (ID)
+  2. El sistema envía un código de 6 dígitos al correo eléctronico registrado
 
 - Tokens JWT para mantener la sesión
   1. El código tiene una validez de 5 minutos
@@ -78,29 +78,65 @@ El sistema implementa un proceso de autenticación sin contraseñas basado en c�
 ## Estructura del Proyecto
 
 ```
-com.amadeus.extraours/
-├── config/
-│   ├── MailConfig
-│   └── SecurityConfig
-├── controller/
-│   ├── AuthenticationController
-│   ├── ExtraHourController
-│   └── GroupController
-├── model/
-│   ├── User
-│   ├── ExtraHour
-│   └── Group
-├── repository/
-│   ├── UserRepository
-│   ├── ExtraHourRepository
-│   └── GroupRepository
-├── service/
-│   ├── AuthenticationService
-│   ├── EmailService
-│   └── ExtraHourService
-└── security/
-    ├── JwtService
-    └── JwtAuthenticationFilter
+com.amadeus.extraours
+├───config
+│       MailConfig.java
+│       SecurityConfig.java
+│
+├───controller
+│       AuthenticationController.java
+│       ExtraHourController.java
+│       GroupController.java
+│       UserController.java
+│
+├───dto
+│   ├───request
+│   │       AuthenticationRequest.java
+│   │       CreateGroupRequest.java
+│   │       ExtraHourRequest.java
+│   │
+│   └───response
+│           AuthenticationResponse.java
+│           ExtraHourDTO.java
+│           ExtraHourValidationDTO.java
+│           GroupDTO.java
+│           UserDTO.java
+│
+├───exception
+│       ExtraHourNotFoundException.java
+│       GlobalExceptionHandler.java
+│       InvalidVerificationCodeException.java
+│       UserLockedException.java
+│       UserNotFoundException.java
+│
+├───model
+│       ExtraHour.java
+│       ExtraHourStatus.java
+│       ExtraHourType.java
+│       Group.java
+│       User.java
+│       UserRole.java
+│
+├───repository
+│       ExtraHourRepository.java
+│       GroupRepository.java
+│       UserRepository.java
+│
+├───security
+│       CustomUserDetailsService.java
+│       JwtAuthenticationFilter.java
+│       JwtService.java
+│       VerificationCodeAuthenticatorProvider.java
+│       VerificationCodeAuthFilter.java
+│
+└───service
+        AuthenticationService.java
+        EmailService.java
+        ExtraHourService.java
+        ExtraHourTypeCalculator.java
+        GroupService.java
+        ReportService.java
+        UserService.java
 ```
 
 ## Clases Principales y sus Responsabilidades
@@ -245,10 +281,6 @@ mvn spring-boot:run
 - `GET /api/extra-hours`: Listar horas extra
 - `PUT /api/extra-hours/{id}/approve`: Aprobar hora extra
 - `PUT /api/extra-hours/{id}/reject`: Rechazar hora extra
-
-## Contribuidores
-
-- [Nombres de los integrantes del grupo]
 
 ## Estado del Proyecto
 

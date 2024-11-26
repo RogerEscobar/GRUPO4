@@ -7,15 +7,17 @@ import com.amadeus.extraours.model.ExtraHour;
 import com.amadeus.extraours.model.ExtraHourStatus;
 import com.amadeus.extraours.model.ExtraHourType;
 import com.amadeus.extraours.repository.ExtraHourRepository;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,16 +64,49 @@ public class ExtraHourService {
         return savedExtraHour;
     }
 
-//    Obtener todas las horas extra paginadas
-
+    // Método para obtener todas las horas extra con filtros
     public Page<ExtraHour> getAllExtraHours(
-            Long employeedId,
+            Long employeeId,
             ExtraHourStatus status,
             LocalDateTime startDate,
             LocalDateTime endDate,
             Pageable pageable) {
 
-        return extraHourRepository.findByFilters(employeedId, startDate, endDate, pageable);
+        logger.info("Buscando horas extra con filtros - " +
+                "employeeId: " + employeeId +
+                ", status: " + status +
+                ", startDate: " + startDate +
+                ", endDate: " + endDate);
+
+        // Si no hay filtro de status, usar el método existente
+        if (status == null) {
+            return extraHourRepository.findByFilters(employeeId, startDate, endDate, pageable);
+        }
+
+        // Si hay filtro de status, usar Specification
+        Specification<ExtraHour> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (employeeId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("employeeId"), employeeId));
+            }
+
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            if (startDate != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("startDateTime"), startDate));
+            }
+
+            if (endDate != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("endDateTime"), endDate));
+            }
+
+            return predicates.isEmpty() ? null : criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return extraHourRepository.findAll(spec, pageable);
     }
 
     //Validar las horas extra sin guardar

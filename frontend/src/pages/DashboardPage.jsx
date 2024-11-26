@@ -1,16 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import ExtraHourForm from "../components/extra-hours/ExtraHourForm";
 import Card from "../components/common/Card";
 import Alert from "../components/common/Alert";
 import useAuthStore from "../store/authStore";
 import extraHourService from "../services/extraHourService";
-
-// Maneja el registro de horas extra y acceso al historial
+import ExtraHoursSummaryCard from "../components/extra-hours/ExtraHoursSummaryCard";
 
 const DashboardPage = () => {
-  // Hooks y estado global
-  const navigate = useNavigate();
+  // Estado global
   const user = useAuthStore((state) => state.user);
 
   // Estados locales para manejo de UI
@@ -18,8 +15,7 @@ const DashboardPage = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  //Maneja el registro de horas extra
-
+  // Maneja el registro de horas extra
   const handleSubmit = async (formData) => {
     try {
       setLoading(true);
@@ -86,11 +82,9 @@ const DashboardPage = () => {
             Consulta tu historial de horas extra registradas y su estado de
             aprobación.
           </p>
-          <button
-            className="w-full bg-amadeus-primary text-white py-2 px-4 rounded-md hover:bg-amadeus-secondary transition-colors"
-            onClick={() => navigate("/extra-hours/history")}>
-            Ver Historial
-          </button>
+          <div className="space-y-6">
+            <ExtraHoursSummaryCard />
+          </div>
         </div>
       </Card>
     </div>

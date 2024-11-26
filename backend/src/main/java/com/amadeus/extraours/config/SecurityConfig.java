@@ -6,6 +6,7 @@ import com.amadeus.extraours.security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -56,6 +57,7 @@ public class SecurityConfig {
                                         "/swagger-ui/**"
                                 ).permitAll()
 //                 Endpoints exclusivos por rol
+                                .requestMatchers(HttpMethod.GET, "/api/extrahours/**").hasAnyRole("EMPLEADO", "TEAM_LEADER", "MASTER")
                                 .requestMatchers("/api/extrahours/approve/**").hasAnyRole("TEAM_LEADER", "MASTER")
                                 .requestMatchers("/api/groups/**", "/api/reports/**").hasRole("MASTER")
 

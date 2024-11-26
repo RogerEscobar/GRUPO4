@@ -60,13 +60,31 @@ public class ExtraHourController {
 
     @Operation(summary = "Obtener todas las horas extra")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ROLE_EMPLEADO', 'ROLE_TEAM_LEADER', 'ROLE_MASTER')")
     public ResponseEntity<Page<ExtraHourDTO>> getAllExtraHours(
             @RequestParam(required = false) Long employeeId,
-            @RequestParam(required = false) ExtraHourStatus status,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)LocalDateTime endDate,
             Pageable pageable) {
-        Page<ExtraHour> extraHours = extraHourService.getAllExtraHours(employeeId, status, startDate, endDate, pageable);
+
+        ExtraHourStatus statusEnum = null;
+        if (status != null && !status.isEmpty()) {
+            try {
+                statusEnum = ExtraHourStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                logger.warning("Estado invalido: " + status);
+            }
+        }
+
+//        Log para depuración
+        logger.info("Consultando horas extra con filtros - " +
+                "employeeId: " + employeeId +
+                ", status: " + statusEnum +
+                ", startDate: " + startDate +
+                ", endDate: " + endDate);
+
+        Page<ExtraHour> extraHours = extraHourService.getAllExtraHours(employeeId, statusEnum, startDate, endDate, pageable);
         return ResponseEntity.ok(extraHours.map(ExtraHourDTO::fromEntity));
     }
 
@@ -106,11 +124,11 @@ public class ExtraHourController {
     @Operation(summary = "Obtener resumen de horas extra por empleado")
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> getExtraHourSummary(
-            @RequestParam Long employeedId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime starDate,
+            @RequestParam Long employeeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
 
-        Map<String, Object> summary = extraHourService.getExtraHourSummary(employeedId, starDate, endDate);
+        Map<String, Object> summary = extraHourService.getExtraHourSummary(employeeId, startDate, endDate);
         return ResponseEntity.ok(summary);
     }
 

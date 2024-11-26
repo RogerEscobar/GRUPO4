@@ -20,13 +20,10 @@ axios.interceptors.request.use(
 
 const extraHourService = {
   // Registrar nuevas horas extra
-
   register: async (data) => {
     try {
       const token = useAuthStore.getState().token;
       const employeeId = useAuthStore.getState().user?.id;
-
-      console.log("Enviando datos:", data); // Para debugging
 
       const response = await axios.post(
         API_URL,
@@ -39,7 +36,6 @@ const extraHourService = {
         }
       );
 
-      console.log("Respuesta:", response.data); // Para debugging
       return response.data;
     } catch (error) {
       if (error.response?.status === 403) {
@@ -51,20 +47,70 @@ const extraHourService = {
     }
   },
 
-  //Obtener todas las horas extra del usuario
-  getAll: async (filters = {}) => {
+  // Obtener todas las horas extra con paginación y filtros
+  getAll: async (params = {}) => {
     try {
+      const {
+        page = 0,
+        size = 10,
+        status,
+        sortDirection = "desc",
+        sortBy = "startDateTime",
+      } = params;
+
+      // Log para depuración
+      console.log("Fetching extra hours with params:", {
+        page,
+        size,
+        status,
+        sort: `${sortBy},${sortDirection}`,
+        employeeId: useAuthStore.getState().user?.id,
+      });
+
       const response = await axios.get(API_URL, {
         params: {
-          ...filters,
+          page,
+          size,
+          status: status?.toUpperCase(),
+          sort: `${sortBy},${sortDirection}`,
           employeeId: useAuthStore.getState().user?.id,
         },
       });
       return response.data;
     } catch (error) {
-      console.error("Error al obtener horas extra:", error);
+      console.error("Error al obtener horas extra:", {
+        status: error.response?.status,
+        message: error.response?.data?.message,
+        data: error.response?.data,
+      });
+
+      if (error.response?.status === 403) {
+        throw new Error("No tienes permisos para realizar esta acción");
+      }
+
       throw new Error(
         error.response?.data?.message || "Error al obtener las horas extra"
+      );
+    }
+  },
+
+  // Obtener últimos 5 registros
+  getLatest: async () => {
+    try {
+      const response = await axios.get(API_URL, {
+        params: {
+          page: 0,
+          size: 5,
+          sort: "startDateTime,desc",
+          employeeId: useAuthStore.getState().user?.id,
+        },
+      });
+      return response.data.content;
+    } catch (error) {
+      console.error("Error al obtener últimos registros:", error);
+      throw new Error(
+        error.response?.data?.message ||
+          "Error al obtener los últimos registros"
       );
     }
   },
