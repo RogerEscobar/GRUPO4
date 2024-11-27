@@ -10,7 +10,7 @@ public class ExtraHourDTO {
     private Long id;
     private Long employeeId;
     private LocalDateTime startDateTime;
-    private LocalDateTime endDatetime;
+    private LocalDateTime endDateTime;
     private double hours;
     private ExtraHourType type;
     private ExtraHourStatus status;
@@ -49,12 +49,12 @@ public class ExtraHourDTO {
         this.startDateTime = startDateTime;
     }
 
-    public LocalDateTime getEndDatetime() {
-        return endDatetime;
+    public LocalDateTime getEndDateTime() {
+        return endDateTime;
     }
 
-    public void setEndDatetime(LocalDateTime endDatetime) {
-        this.endDatetime = endDatetime;
+    public void setEndDateTime(LocalDateTime endDateTime) {
+        this.endDateTime = endDateTime;
     }
 
     public double getHours() {
@@ -95,7 +95,7 @@ public class ExtraHourDTO {
         dto.setId(entity.getId());
         dto.setEmployeeId(entity.getEmployeeId());
         dto.setStartDateTime(entity.getStartDateTime());
-        dto.setEndDatetime(entity.getEndDateTime());
+        dto.setEndDateTime(entity.getEndDateTime());
         dto.setHours(entity.getHours());
         dto.setType(entity.getType());
         dto.setStatus(entity.getStatus());

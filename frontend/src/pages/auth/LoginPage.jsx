@@ -103,7 +103,8 @@ function LoginPage() {
       <Modal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        title="Código Enviado">
+        title="Código Enviado"
+        showDefaultButton={true}>
         <p className="text-sm text-gray-500">
           Se ha enviado un código de verificación al correo electrónico
           registrado. Por favor, revisa tu bandeja de entrada.

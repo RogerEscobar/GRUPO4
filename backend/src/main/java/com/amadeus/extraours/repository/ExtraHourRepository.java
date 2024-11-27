@@ -16,7 +16,7 @@ import java.util.List;
 @Repository
 public interface ExtraHourRepository extends JpaRepository <ExtraHour, Long>, JpaSpecificationExecutor<ExtraHour> {
 
-    // Método para buscar por rango
+    // Metodo para buscar por rango
     @Query("SELECT e FROM ExtraHour e WHERE " +
             "(:employeeId IS NULL OR e.employeeId = :employeeId) AND " +
             "(:startDate IS NULL OR e.startDateTime >= :startDate) AND " +
@@ -49,4 +49,16 @@ public interface ExtraHourRepository extends JpaRepository <ExtraHour, Long>, Jp
             @Param("employeeId") Long employeeId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    //Validar solapamientos sin incluir registro actual
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM ExtraHour e " +
+            "WHERE e.employeeId = :employeeId " +
+            "AND e.id != :excludeId " +
+            "AND ((e.startDateTime <= :endDateTime AND e.endDateTime >= :startDateTime) " +
+            "OR (e.startDateTime >= :startDateTime AND e.startDateTime <= :endDateTime))")
+    boolean existsOverlappingHoursExcludingId(
+            @Param("employeeId") Long employeeId,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime,
+            @Param("excludeId") Long excludeId);
 }

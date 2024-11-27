@@ -33,9 +33,7 @@ public class ExtraHourService {
     private final ExtraHourTypeCalculator typeCalculator;
 
     @Autowired
-    public ExtraHourService(
-            ExtraHourRepository extraHourRepository,
-            ExtraHourTypeCalculator typeCalculator) {
+    public ExtraHourService(ExtraHourRepository extraHourRepository, ExtraHourTypeCalculator typeCalculator) {
         this.extraHourRepository = extraHourRepository;
         this.typeCalculator = typeCalculator;
     }
@@ -64,7 +62,7 @@ public class ExtraHourService {
         return savedExtraHour;
     }
 
-    // Método para obtener todas las horas extra con filtros
+    // Obtener horas extra con filtros
     public Page<ExtraHour> getAllExtraHours(
             Long employeeId,
             ExtraHourStatus status,
@@ -72,18 +70,15 @@ public class ExtraHourService {
             LocalDateTime endDate,
             Pageable pageable) {
 
-        logger.info("Buscando horas extra con filtros - " +
-                "employeeId: " + employeeId +
-                ", status: " + status +
-                ", startDate: " + startDate +
-                ", endDate: " + endDate);
+        logger.info("Buscando horas extra con filtros - employeeId: " + employeeId +
+                ", status: " + status + ", startDate: " + startDate + ", endDate: " + endDate);
 
-        // Si no hay filtro de status, usar el método existente
+        // Si no hay filtro de status, usar el metodo existente
         if (status == null) {
             return extraHourRepository.findByFilters(employeeId, startDate, endDate, pageable);
         }
 
-        // Si hay filtro de status, usar Specification
+        // Crear especificacion con filtros
         Specification<ExtraHour> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -123,14 +118,10 @@ public class ExtraHourService {
             );
 
             //Asignación de horas calculadas
-            validation.setHorasDiurnas(hoursPerType.containsKey(ExtraHourType.EXTRA_DIURNA) ?
-                    hoursPerType.get(ExtraHourType.EXTRA_DIURNA) : 0.0);
-            validation.setHorasNocturnas(hoursPerType.containsKey(ExtraHourType.EXTRA_NOCTURNA) ?
-                    hoursPerType.get(ExtraHourType.EXTRA_NOCTURNA) : 0.0);
-            validation.setHorasDominicalesDiurnas(hoursPerType.containsKey(ExtraHourType.EXTRA_DOMINICAL_DIURNA) ?
-                    hoursPerType.get(ExtraHourType.EXTRA_DOMINICAL_DIURNA) : 0.0);
-            validation.setHorasDominicalesNocturnas(hoursPerType.containsKey(ExtraHourType.EXTRA_DOMINICAL_NOCTURNA) ?
-                    hoursPerType.get(ExtraHourType.EXTRA_DOMINICAL_NOCTURNA) : 0.0);
+            validation.setHorasDiurnas(hoursPerType.getOrDefault(ExtraHourType.EXTRA_DIURNA, 0.0));
+            validation.setHorasNocturnas(hoursPerType.getOrDefault(ExtraHourType.EXTRA_NOCTURNA, 0.0));
+            validation.setHorasDominicalesDiurnas(hoursPerType.getOrDefault(ExtraHourType.EXTRA_DOMINICAL_DIURNA, 0.0));
+            validation.setHorasDominicalesNocturnas(hoursPerType.getOrDefault(ExtraHourType.EXTRA_DOMINICAL_NOCTURNA, 0.0));
             validation.setValid(true);
         } catch (IllegalArgumentException e) {
             validation.setValid(false);
@@ -152,12 +143,42 @@ public class ExtraHourService {
     public ExtraHour updateExtraHour(Long id, ExtraHour updatedExtraHour) {
         ExtraHour existingExtraHour = getExtraHourByID(id);
 
-        if (existingExtraHour.getStatus() == ExtraHourStatus.APROBADO) {
-            throw new IllegalStateException("No se puede modificar una hora extra aprobada");
+        logger.info("Actualizando registro - ID: " + id +
+                ", EmployeeId Original: " + existingExtraHour.getEmployeeId() +
+                ", EmployeeId Solicitante: " + updatedExtraHour.getEmployeeId() +
+                ", Status: " + existingExtraHour.getStatus());
+
+
+        // Validar que solo se puedan modificar registros pendientes
+        if (existingExtraHour.getStatus() != ExtraHourStatus.PENDIENTE) {
+            logger.warning("Intento de modificar registro no pendiente");
+            throw new IllegalStateException("Solo se pueden modificar registros en estado pendiente");
         }
 
-        updateExtraHourFields(existingExtraHour, updatedExtraHour);
-        return extraHourRepository.save(existingExtraHour);
+        // Validar que el usuario solo pueda modificar sus propios registros
+        if (!existingExtraHour.getEmployeeId().equals(updatedExtraHour.getEmployeeId())) {
+            logger.warning("Intento de modificar registro de otro empleado");
+            throw new IllegalStateException("No tienes permisos para modificar registros de otros empleados");
+        }
+
+        // Realizar validaciones básicas
+        validateExtraHour(updatedExtraHour);
+
+        try {
+            // Actualizar los campos
+            updateExtraHourFields(existingExtraHour, updatedExtraHour);
+
+            // Recalcular el tipo de hora extra
+            ExtraHourType calculatedType = typeCalculator.calculateType(existingExtraHour.getStartDateTime());
+            existingExtraHour.setType(calculatedType);
+
+            ExtraHour savedExtraHour = extraHourRepository.save(existingExtraHour);
+            logger.info("Registro actualizado exitosamente - ID: " + id);
+            return savedExtraHour;
+        } catch (Exception e) {
+            logger.severe("Error al actualizar registro - ID: " + id + " - Error: " + e.getMessage());
+            throw new RuntimeException("Error al actualizar el registro", e);
+        }
     }
 
 //    Actualiza el estado de un registro
@@ -174,22 +195,48 @@ public class ExtraHourService {
         return extraHourRepository.findByEmployeeId(employeeId);
     }
 
-//    Obtiene las horas extra totales de un empleado x periodo
-    public Double getTotalHoursByEmployee(Long employeeId, LocalDateTime start, LocalDateTime end){
-        return extraHourRepository.getTotalHoursByEmployeeAndPeriod(employeeId, start, end);
-    }
-
-    public Map<String, Object> getExtraHourSummary(
-            Long employeeId,
-            LocalDateTime startDate,
-            LocalDateTime endDate) {
-
+    // Obtiene el resumen de horas extra por empleado y período
+    public Map<String, Object> getExtraHourSummary(Long employeeId, LocalDateTime startDate, LocalDateTime endDate) {
         Map<String, Object> summary = new HashMap<>();
-        Double totalHours = getTotalHoursByEmployee(employeeId, startDate, endDate);
 
-        summary.put("totalHours", totalHours !=null ? totalHours : 0.0);
+        // Obtener todas las horas del período usando el método existente
+        Page<ExtraHour> allHours = getAllExtraHours(
+                employeeId,
+                null,
+                startDate,
+                endDate,
+                Pageable.unpaged()
+        );
+
+        // Inicializar contadores
+        double totalHours = 0.0;
+        double pendingHours = 0.0;
+        double approvedHours = 0.0;
+        long pendingCount = 0;
+        long approvedCount = 0;
+
+        // Calcular totales iterando sobre los registros
+        for (ExtraHour hour : allHours.getContent()) {
+            double hours = hour.getHours();
+            totalHours += hours;
+
+            if (hour.getStatus() == ExtraHourStatus.PENDIENTE) {
+                pendingHours += hours;
+                pendingCount++;
+            } else if (hour.getStatus() == ExtraHourStatus.APROBADO) {
+                approvedHours += hours;
+                approvedCount++;
+            }
+        }
+
+        // Construir objeto de respuesta
+        summary.put("totalHours", totalHours);
+        summary.put("pendingHours", pendingHours);
+        summary.put("approvedHours", approvedHours);
+        summary.put("pendingCount", pendingCount);
+        summary.put("approvedCount", approvedCount);
         summary.put("employeeId", employeeId);
-        summary.put("starDate", startDate);
+        summary.put("startDate", startDate);
         summary.put("endDate", endDate);
 
         return summary;
@@ -203,7 +250,7 @@ public class ExtraHourService {
         extraHourRepository.deleteById(id);
     }
 
-
+//Validaciones basicas de hora extra
     public void validateExtraHour(ExtraHour extraHour) {
         if (extraHour.getStartDateTime().isAfter(extraHour.getEndDateTime())){
             throw new IllegalArgumentException("La fecha de inicio debe ser anterior a la fecha del fin");
@@ -216,7 +263,7 @@ public class ExtraHourService {
 
 
 
-
+//Actualiza los campos de una hora extra
     private void updateExtraHourFields(ExtraHour existing, ExtraHour updated) {
         existing.setStartDateTime(updated.getStartDateTime());
         existing.setEndDateTime(updated.getEndDateTime());

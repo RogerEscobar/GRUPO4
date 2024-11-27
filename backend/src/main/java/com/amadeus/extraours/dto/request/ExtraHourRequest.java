@@ -19,7 +19,7 @@ public class ExtraHourRequest {
     @PastOrPresent(message = "La fecha de fin no puede ser futura")
     private LocalDateTime endDateTime;
 
-    @NotNull(message = "El tipo de hora extra no puede ser nulo")
+//    @NotNull(message = "El tipo de hora extra no puede ser nulo")
     private ExtraHourType type;
 
     @Size(max = 500, message = "Las observaciones no pueden exceder 500 caracteres")

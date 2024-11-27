@@ -75,6 +75,11 @@ const HistoryPage = () => {
     navigate("/dashboard");
   }, [navigate]);
 
+  // Actualizar los registros despues de edicion
+  const HandleUpdate = useCallback(() => {
+    loadRecords();
+  }, [loadRecords]);
+
   return (
     <div className="space-y-6">
       <Card className="w-full">
@@ -146,7 +151,11 @@ const HistoryPage = () => {
             <div className="text-center py-4">Cargando...</div>
           ) : (
             <>
-              <ExtraHoursList records={records} showEditButton={false} />
+              <ExtraHoursList
+                records={records}
+                showEditButton={true}
+                onUpdate={HandleUpdate}
+              />
 
               {/* Paginación */}
               <div className="flex justify-center space-x-2 mt-4">

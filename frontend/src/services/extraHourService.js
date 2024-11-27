@@ -94,13 +94,13 @@ const extraHourService = {
     }
   },
 
-  // Obtener últimos 5 registros
+  // Obtener últimos registros
   getLatest: async () => {
     try {
       const response = await axios.get(API_URL, {
         params: {
           page: 0,
-          size: 5,
+          size: 3,
           sort: "startDateTime,desc",
           employeeId: useAuthStore.getState().user?.id,
         },
@@ -131,6 +131,47 @@ const extraHourService = {
       throw new Error(
         error.response?.data?.message || "Error al obtener el resumen"
       );
+    }
+  },
+
+  // Actualizar horas extra existentes
+  update: async (id, data) => {
+    try {
+      const employeeId = Number(useAuthStore.getState().user?.id);
+      const requestData = {
+        ...data,
+        employeeId,
+        startDateTime: data.startDateTime,
+        endDateTime: data.endDateTime,
+        observations: data.observations,
+      };
+
+      console.log("Enviando datos de actualización:", requestData);
+
+      const response = await axios.put(`${API_URL}/${id}`, requestData, {
+        headers: {
+          Authorization: `Bearer ${useAuthStore.getState().token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 403) {
+        throw new Error(
+          "No tienes permisos para modificar este registro. Solo puedes modificar tus propios registros pendientes"
+        );
+      } else if (error.response?.status === 400) {
+        throw new Error(
+          error.response?.data?.message ||
+            "Datos inválidos para la actualización"
+        );
+      } else if (error.response?.status === 404) {
+        throw new Error("El registro que intentas modificar no existe");
+      } else {
+        throw new Error(
+          error.response?.data?.message || "Error al actualizar el registro"
+        );
+      }
     }
   },
 };

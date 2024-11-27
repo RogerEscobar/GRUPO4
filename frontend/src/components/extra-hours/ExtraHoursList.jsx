@@ -33,11 +33,14 @@ const ExtraHoursList = ({
   compact = false,
   onUpdate,
 }) => {
+  // Estados locales para manejar el modal de edición y mensajes
   const [editingRecord, setEditingRecord] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
+  // Función que maneja el éxito de la edición
   const handleEditSuccess = useCallback(() => {
     setSuccessMessage("Registro actualizado existosamente");
+    setEditingRecord(null);
     if (onUpdate) onUpdate();
     setTimeout(() => setSuccessMessage(null), 3000);
   }, [onUpdate]);
@@ -70,12 +73,11 @@ const ExtraHoursList = ({
                   Observaciones
                 </th>
               )}
-              {showEditButton &&
-                record(
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                )}
+              {showEditButton && (
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -103,6 +105,7 @@ const ExtraHoursList = ({
                 )}
                 {showEditButton && record.status === "PENDIENTE" && (
                   <td className="px-6 py-4 text-right whitespace-nowrap">
+                    {console.log("Record a editar:", record)}
                     <button
                       className="text-amadeus-primary hover:text-amadeus-secondary"
                       onClick={() => setEditingRecord(record)}>
@@ -116,6 +119,7 @@ const ExtraHoursList = ({
         </table>
       </div>
 
+      {/* Modal de edición */}
       {editingRecord && (
         <EditExtraHourModal
           isOpen={!!editingRecord}
@@ -137,11 +141,11 @@ ExtraHoursList.propTypes = {
       hours: PropTypes.number.isRequired,
       status: PropTypes.string.isRequired,
       observations: PropTypes.string,
-      onUpdate: PropTypes.func,
     })
   ).isRequired,
   showEditButton: PropTypes.bool,
   compact: PropTypes.bool,
+  onUpdate: PropTypes.func,
 };
 
 export default ExtraHoursList;

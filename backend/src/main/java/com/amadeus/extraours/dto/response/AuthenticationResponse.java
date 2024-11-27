@@ -7,7 +7,7 @@ public class AuthenticationResponse {
 
     public AuthenticationResponse(String token, String userRole, String userName){
         this.token = token;
-        this.userRole = userRole;
+        this.userRole = "ROLE_" + userRole;
         this.userName = userName;
     }
 

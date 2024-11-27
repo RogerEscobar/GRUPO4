@@ -8,9 +8,15 @@ import extraHourService from "../../services/extraHourService";
 
 const EditExtraHourModal = ({ isOpen, onClose, record, onSuccess }) => {
   const [startDateTime, setStartDateTime] = useState(
-    record?.startDateTime || ""
+    record?.startDateTime
+      ? new Date(record.startDateTime).toISOString().slice(0, 16)
+      : ""
   );
-  const [endDateTime, setEndDateTime] = useState(record?.endDateTime || "");
+  const [endDateTime, setEndDateTime] = useState(
+    record?.endDateTime
+      ? new Date(record.endDateTime).toISOString().slice(0, 16)
+      : ""
+  );
   const [observations, setObservations] = useState(record?.observations || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -56,6 +62,8 @@ const EditExtraHourModal = ({ isOpen, onClose, record, onSuccess }) => {
       onSuccess();
       onClose();
     } catch (error) {
+      console.error("Error en actualización:", error);
+      // Mostrar el mensaje de error que viene del servicio
       setError(error.message);
     } finally {
       setLoading(false);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import extraHourService from "../../services/extraHourService";
 import ExtraHoursList from "./ExtraHoursList";
@@ -11,11 +11,7 @@ const ExtraHoursSummaryCard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -45,16 +41,26 @@ const ExtraHoursSummaryCard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // No hay dependencias porque no usa ninguna variable externa
 
-  if (loading) {
-    return <div className="text-center py-4">Cargando...</div>;
-  }
+  // Usar loadData en useEffect
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Función para manejar actualizaciones
+  const handleUpdate = useCallback(() => {
+    loadData(); // Ahora loadData está disponible aquí
+  }, [loadData]);
 
   const handleHistoryClick = () => {
     console.log("Navegando al historial");
     navigate("/dashboard/extra-hours/history");
   };
+
+  if (loading) {
+    return <div className="text-center py-4">Cargando...</div>;
+  }
 
   return (
     <div>
@@ -64,6 +70,8 @@ const ExtraHoursSummaryCard = () => {
 
       {summary ? (
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          {console.log("Datos del resumen en render:", summary)}
+
           <h3 className="text-sm font-medium text-gray-500 mb-3">
             Resumen del Mes Actual
           </h3>
@@ -113,6 +121,7 @@ const ExtraHoursSummaryCard = () => {
             records={latestRecords}
             showEditButton={true}
             compact={true}
+            onUpdate={handleUpdate}
           />
         ) : (
           <p className="text-sm text-gray-500 text-center py-4">
