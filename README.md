@@ -304,7 +304,7 @@ Proyecto académico en desarrollo, versión MVP.
 1. Accede a la sección de reportes.
 2. Genera informes detallados según los filtros deseados.
 
----
+----
 
 # User Manual
 
