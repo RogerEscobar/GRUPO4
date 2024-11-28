@@ -285,3 +285,42 @@ mvn spring-boot:run
 ## Estado del Proyecto
 
 Proyecto académico en desarrollo, versión MVP.
+
+# Manual de Usuario
+
+## Uso del Sistema
+
+### Inicio de Sesión
+1. Ingresa tu cédula (ID).
+2. Recibe un código de verificación en tu correo.
+3. Introduce el código para iniciar sesión.
+
+### Registro de Horas Extra
+1. Accede a la sección de horas extra.
+2. Completa el formulario con la fecha y duración.
+3. Envía el registro para aprobación.
+
+### Generación de Reportes
+1. Accede a la sección de reportes.
+2. Genera informes detallados según los filtros deseados.
+
+---
+
+# User Manual
+
+## System Usage
+
+### Login
+1. Enter your ID.
+2. Receive a verification code in your email.
+3. Enter the code to log in.
+
+### Overtime Registration
+1. Access the overtime section.
+2. Complete the form with the date and duration.
+3. Submit the entry for approval.
+
+### Report Generation
+1. Access the report section.
+2. Generate detailed reports based on desired filters.
+
